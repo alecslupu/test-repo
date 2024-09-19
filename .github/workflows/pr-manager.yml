@@ -1,0 +1,28 @@
+name: Backport
+on:
+  pull_request_target:
+    types: ["labeled", "closed"]
+
+jobs:
+  backport:
+    name: "Backporter"
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.merged
+      && (
+        github.event.action == 'closed'
+        || (
+          github.event.action == 'labeled'
+          && contains(github.event.label.name, 'backport')
+        )
+      )
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+      - run: gem install decidim-maintainers_toolbox
+        name: "Install toolbox"
+      - run: echo "PR ${{ github.event.number }}, has labels ${{ toJson(github.event.pull_request.labels.*.name) }}"
+        name: listing params
+
