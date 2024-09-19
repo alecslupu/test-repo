@@ -3,19 +3,25 @@ on:
   pull_request_target:
     types: ["labeled", "closed"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backport:
     name: "Backporter"
     runs-on: ubuntu-latest
     if: >
-      github.event.pull_request.merged
+      github.base_ref == 'main' && 
+      github.event.pull_request.merged && 
+      !contains(github.event.pull_request.labels.*.name, 'no-backport')
       && (
         github.event.action == 'closed'
         || (
           github.event.action == 'labeled'
-            && (contains(github.event.labels.*.name, 'backport') || contains(github.event.label.name, 'backport') )
+            && (contains(github.event.pull_request.labels.*.name, 'type: fix') || contains(github.event.label.name, 'type: fix') )
         )
       )
     steps:
-      - run: echo "PR ${{ github.event.number }}, has labels ${{ toJson(github.event.pull_request.labels.*.name) }}"
+      - run: echo "PR ${{ github.event.number }}, ${{ github.event.pull_request.number }} , has labels ${{ toJson(github.event.pull_request.labels.*.name) }}"
         name: listing params
